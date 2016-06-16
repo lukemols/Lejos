@@ -1,6 +1,6 @@
 package Detection;
 
-import org.opencv.
+import org.opencv.*;
 
 /**
  * Created by becca on 15/06/2016.

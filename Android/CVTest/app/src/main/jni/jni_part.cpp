@@ -35,109 +35,147 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
 
     */
 
-    Mat &img = *(Mat *) addrRgba;
+    try {
 
-    //converting the original image into grayscale
-    Mat* imgGrayScale = cvCreateImage(cvGetSize(img), 8, 1);
-    Mat* imgCanny = cvCreateImage(cvGetSize(img), 8, 1);
-    cvCvtColor(img,imgGrayScale,CV_BGR2GRAY);
+        Mat &mGr = *(Mat *) addrGray;
+        Mat &img = *(Mat *) addrRgba;
 
-    //thresholding the grayscale image to get better results
-    cvThreshold(imgGrayScale,imgGrayScale,128,255,CV_THRESH_BINARY);
+        //converting the original image into grayscale
+        //Mat* imgGrayScale = cvCreateImage(cvGetSize(img), 8, 1);//[RIV]
+        //FUNZIONA?! Niente errori quindi sì!!//[RIV]
+        Mat *imgGrayScale = (Mat *) cvCreateMat(img.rows, img.cols,
+                                                CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
+        //Mat* imgCanny = cvCreateImage(cvGetSize(img), 8, 1);
+        Mat *imgCanny = (Mat *) cvCreateMat(img.rows, img.cols,
+                                            CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
+        //thresholding the grayscale image to get better results
 
-    CvSeq* contours;  //hold the pointer to a contour in the memory block
-    CvSeq* result;   //hold sequence of points of a contour
-    CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
+        threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);//scopami poi ti spiego
+        //cvThreshold(&mGr, &mGr, 128, 255, CV_THRESH_BINARY);
 
-    //finding all contours in the image
-    cvFindContours(imgGrayScale, storage, &contours, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+        CvSeq *contours;  //hold the pointer to a contour in the memory block
+        CvSeq *result;   //hold sequence of points of a contour
+        CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
-    int count = 0;
-    //iterating through each contour
-    while(contours)
-    {
-        //obtain a sequence of points of contour, pointed by the variable 'contour'
-        result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contours)*0.02, 0);
+        //finding all contours in the image
+        cvFindContours(&mGr, storage, &contours, sizeof(CvContour), CV_RETR_LIST,
+                       CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
-        //if there are 3  vertices  in the contour(It should be a triangle)
-        if(result->total==3 )
-        {
-            //iterating through each point
-            CvPoint *pt[3];
-            for(int i=0;i<3;i++){
-                pt[i] = (CvPoint*)cvGetSeqElem(result, i);
+        int count = 0;
+        //iterating through each contour
+        while (contours) {
+            //obtain a sequence of points of contour, pointed by the variable 'contour'
+            result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP,
+                                  cvContourPerimeter(contours) * 0.02, 0);
+
+            //if there are 3  vertices  in the contour(It should be a triangle)
+            if (result->total == 3) {
+                //iterating through each point
+                CvPoint *pt[3];
+                for (int i = 0; i < 3; i++) {
+                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
+                }
+
+                //drawing lines around the triangle
+                cvLine(&img, *pt[0], *pt[1], cvScalar(255, 0, 0), 4);
+                cvLine(&img, *pt[1], *pt[2], cvScalar(255, 0, 0), 4);
+                cvLine(&img, *pt[2], *pt[0], cvScalar(255, 0, 0), 4);
+
             }
 
-            //drawing lines around the triangle
-            cvLine(img, *pt[0], *pt[1], cvScalar(255,0,0),4);
-            cvLine(img, *pt[1], *pt[2], cvScalar(255,0,0),4);
-            cvLine(img, *pt[2], *pt[0], cvScalar(255,0,0),4);
+                //if there are 4 vertices in the contour(It should be a quadrilateral)
+            else if (result->total == 4) {
+                //iterating through each point
+                CvPoint *pt[4];
+                for (int i = 0; i < 4; i++) {
+                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
+                }
 
-        }
-
-            //if there are 4 vertices in the contour(It should be a quadrilateral)
-        else if(result->total==4 )
-        {
-            //iterating through each point
-            CvPoint *pt[4];
-            for(int i=0;i<4;i++){
-                pt[i] = (CvPoint*)cvGetSeqElem(result, i);
+                //drawing lines around the quadrilateral
+                cvLine(&img, *pt[0], *pt[1], cvScalar(0, 255, 0), 4);
+                cvLine(&img, *pt[1], *pt[2], cvScalar(0, 255, 0), 4);
+                cvLine(&img, *pt[2], *pt[3], cvScalar(0, 255, 0), 4);
+                cvLine(&img, *pt[3], *pt[0], cvScalar(0, 255, 0), 4);
             }
 
-            //drawing lines around the quadrilateral
-            cvLine(img, *pt[0], *pt[1], cvScalar(0,255,0),4);
-            cvLine(img, *pt[1], *pt[2], cvScalar(0,255,0),4);
-            cvLine(img, *pt[2], *pt[3], cvScalar(0,255,0),4);
-            cvLine(img, *pt[3], *pt[0], cvScalar(0,255,0),4);
-        }
+                //if there are 7  vertices  in the contour(It should be a heptagon)
+            else if (result->total == 7) {
+                //iterating through each point
+                CvPoint *pt[7];
+                for (int i = 0; i < 7; i++) {
+                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
+                }
 
-            //if there are 7  vertices  in the contour(It should be a heptagon)
-        else if(result->total ==7  )
-        {
-            //iterating through each point
-            CvPoint *pt[7];
-            for(int i=0;i<7;i++){
-                pt[i] = (CvPoint*)cvGetSeqElem(result, i);
+                //drawing lines around the heptagon
+                cvLine(&img, *pt[0], *pt[1], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[1], *pt[2], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[2], *pt[3], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[3], *pt[4], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[4], *pt[5], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[5], *pt[6], cvScalar(0, 0, 255), 4);
+                cvLine(&img, *pt[6], *pt[0], cvScalar(0, 0, 255), 4);
             }
 
-            //drawing lines around the heptagon
-            cvLine(img, *pt[0], *pt[1], cvScalar(0,0,255),4);
-            cvLine(img, *pt[1], *pt[2], cvScalar(0,0,255),4);
-            cvLine(img, *pt[2], *pt[3], cvScalar(0,0,255),4);
-            cvLine(img, *pt[3], *pt[4], cvScalar(0,0,255),4);
-            cvLine(img, *pt[4], *pt[5], cvScalar(0,0,255),4);
-            cvLine(img, *pt[5], *pt[6], cvScalar(0,0,255),4);
-            cvLine(img, *pt[6], *pt[0], cvScalar(0,0,255),4);
+            //obtain the next contour
+            contours = contours->h_next;
+            count++;
         }
 
-        //obtain the next contour
-        contours = contours->h_next;
-        count++;
+        // apply hough circles to find circles and draw a cirlce around it
+        cvCanny(&mGr, imgCanny, 0, 0, 3);
+        CvSeq *mycircles = cvHoughCircles(imgCanny,
+                                        storage,
+                                        CV_HOUGH_GRADIENT,
+                                        2,
+                                        imgCanny->rows / 4,//height/4,//WUT?!//[RIV]
+                                        200,
+                                        100);
+
+        for (int i = 0; i < mycircles->total; i++) {
+            float *p = (float *) cvGetSeqElem(mycircles, i);
+            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
+                     3, CV_RGB(0, 255, 0), -1, 8, 0);
+            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
+                     cvRound(p[2]), CV_RGB(0, 255, 255), 3, 8, 0);
+        }
+
+        //cleaning up
+        cvReleaseMemStorage(&storage);
+        //cvReleaseImage(&imgGrayScale);//WUT?!
+        //addrGray->release();
+
+        //return count;
+
+        return 0;
+        // apply hough circles to find circles and draw a cirlce around it
+        cvCanny(&mGr, imgCanny, 0, 0, 3);
+        CvSeq *circles = cvHoughCircles(imgCanny,
+                                        storage,
+                                        CV_HOUGH_GRADIENT,
+                                        2,
+                                        imgCanny->rows / 4,//height/4,//WUT?!//[RIV]
+                                        200,
+                                        100);
+
+        for (int i = 0; i < circles->total; i++) {
+            float *p = (float *) cvGetSeqElem(circles, i);
+            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
+                     3, CV_RGB(0, 255, 0), -1, 8, 0);
+            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
+                     cvRound(p[2]), CV_RGB(0, 255, 255), 3, 8, 0);
+        }
+
+        //cleaning up
+        cvReleaseMemStorage(&storage);
+        //cvReleaseImage(&imgGrayScale);//WUT?!
+        //addrGray->release();
+
+        return count;
     }
-    // apply hough circles to find circles and draw a cirlce around it
-    cvCanny(imgGrayScale,imgCanny,0,0,3);
-    CvSeq* circles = cvHoughCircles(imgCanny,
-                                    storage,
-                                    CV_HOUGH_GRADIENT,
-                                    2,
-                                    imgCanny->height/4,
-                                    200,
-                                    100 );
-
-    for (int i = 0; i < circles->total; i++)
+    catch(...)
     {
-        float* p = (float*)cvGetSeqElem( circles, i );
-        cvCircle( img, cvPoint(cvRound(p[0]),cvRound(p[1])),
-                  3, CV_RGB(0,255,0), -1, 8, 0 );
-        cvCircle( img, cvPoint(cvRound(p[0]),cvRound(p[1])),
-                  cvRound(p[2]), CV_RGB(0,255,255), 3, 8, 0 );
+        return -1;
     }
-
-    //cleaning up
-    cvReleaseMemStorage(&storage);
-    cvReleaseImage(&imgGrayScale);
-
-    return count;
     /*
      *
      * vector<Vec3f> circles;

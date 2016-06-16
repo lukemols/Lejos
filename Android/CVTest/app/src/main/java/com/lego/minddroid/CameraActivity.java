@@ -191,6 +191,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
+        double[] x = mGray.get(0,0);
         centers = Function(mGray.getNativeObjAddr(), mRgba.getNativeObjAddr());
         //followRedBall();
         String s = Float.toString(centers);
