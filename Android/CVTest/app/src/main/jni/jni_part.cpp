@@ -41,106 +41,116 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
         Mat &img = *(Mat *) addrRgba;
 
         fCrash = 1;
+
+        //blur( mGr, mGr, Size(4,4) );//3e3 buono ma non abbastanza
+        //GaussianBlur(mGr,mGr,Size(5,5),1.4,1.4);
+        //Canny(mGr, mGr, 75, 175, 3, true);
+
+        GaussianBlur(img,img,Size(5,5),3,3);//1.4
+        Canny(img, mGr, 75, 175, 3, true);
+
         //converting the original image into grayscale
         //Mat* imgGrayScale = cvCreateImage(cvGetSize(img), 8, 1);//[RIV]
         //FUNZIONA?! Niente errori quindi sì!!//[RIV]
-        Mat *imgGrayScale = (Mat *) cvCreateMat(img.rows, img.cols,
-                                                CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
+        //Mat *imgGrayScale = (Mat *) cvCreateMat(img.rows, img.cols,
+        //                                        CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
         //Mat* imgCanny = cvCreateImage(cvGetSize(img), 8, 1);
-        Mat *imgCanny = (Mat *) cvCreateMat(img.rows, img.cols,
-                                            CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
+        //Mat *imgCanny = (Mat *) cvCreateMat(img.rows, img.cols,
+        //                                    CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
         //thresholding the grayscale image to get better results
 
         fCrash = 2;
-        threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);//scopami poi ti spiego
+        threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);//NOPE
         //cvThreshold(&mGr, &mGr, 128, 255, CV_THRESH_BINARY);
 
-        CvSeq *contours;  //hold the pointer to a contour in the memory block
-        CvSeq *result;   //hold sequence of points of a contour
+        //CvSeq *contours;  //hold the pointer to a contour in the memory block
+        vector<vector<Point> > contours;  //hold the pointer to a contour in the memory block
+        vector<Point> result;   //hold sequence of points of a contour
         CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
         fCrash = 3;
         //finding all contours in the image
-        cvFindContours(&mGr, storage, &contours, sizeof(CvContour), CV_RETR_LIST,
-                       CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
-        //findContours(mGr, contours, CV_RETR_LIST,
+        //cvFindContours(&mGr, storage, &contours, sizeof(CvContour), CV_RETR_LIST,
         //               CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+        findContours(mGr, contours, CV_RETR_LIST,
+                       CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
         fCrash = 4;
         int count = 0;
         //iterating through each contour
-        while (contours) {
+        for(int idx = 0;idx < contours.size();idx++) {
             //obtain a sequence of points of contour, pointed by the variable 'contour'
-            result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP,
-                                  cvContourPerimeter(contours) * 0.02, 0);
+            //result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP,
+            //                    cvContourPerimeter(contours) * 0.02, 0);
 
-            //result = approxPoly(contours, result,
-            //                      cvContourPerimeter(contours) * 0.02, true);
+            approxPolyDP(Mat(contours[idx]), result,
+                                  arcLength(Mat(contours[idx]), true) * 0.02, true);
 
             fCrash = 10 + 100 * count;
             //if there are 3  vertices  in the contour(It should be a triangle)
-            if (result->total == 3) {
-                //iterating through each point
-                CvPoint *pt[3];
-                for (int i = 0; i < 3; i++) {
-                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
-                }
+            /*if (result.size() == 3) {
 
                 //drawing lines around the triangle
-                cvLine(&img, *pt[0], *pt[1], cvScalar(255, 0, 0), 4);
-                cvLine(&img, *pt[1], *pt[2], cvScalar(255, 0, 0), 4);
-                cvLine(&img, *pt[2], *pt[0], cvScalar(255, 0, 0), 4);
+                line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
+                line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
+                line(img, result[2], result[0], cvScalar(255, 0, 0), 4);
 
                 fCrash = 11 + 100 * count;
 
             }
 
                 //if there are 4 vertices in the contour(It should be a quadrilateral)
-            else if (result->total == 4) {
-                //iterating through each point
-                CvPoint *pt[4];
-                for (int i = 0; i < 4; i++) {
-                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
+            else*/ if (result.size() == 4) {
+
+                double dist1 = (result[0].x-result[1].x)*(result[0].x-result[1].x) + (result[0].y-result[1].y)*(result[0].y-result[1].y);
+                double dist2 = (result[1].x-result[2].x)*(result[1].x-result[2].x) + (result[1].y-result[2].y)*(result[1].y-result[2].y);
+                double dist3 = (result[2].x-result[3].x)*(result[2].x-result[3].x) + (result[2].y-result[3].y)*(result[2].y-result[3].y);
+                double dist4 = (result[3].x-result[0].x)*(result[3].x-result[0].x) + (result[3].y-result[0].y)*(result[3].y-result[0].y);
+                double dist5 = (result[0].x-result[2].x)*(result[0].x-result[2].x) + (result[0].y-result[2].y)*(result[0].y-result[2].y);
+                double dist6 = (result[1].x-result[3].x)*(result[1].x-result[3].x) + (result[1].y-result[3].y)*(result[1].y-result[3].y);
+
+                if(
+                        //dist1 == dist2 && dist2 == dist3 && dist3 == dist4 &&
+                        /*0.7*dist2 < dist1 && dist1 < 1.3*dist2 &&
+                        0.7*dist3 < dist2 && dist2 < 1.3*dist3 &&
+                        0.7*dist4 < dist3 && dist3 < 1.3*dist4 &&
+                        0.7*dist1 < dist4 && dist4 < 1.3*dist1
+                        &&*/ 0.7*dist5 < dist6 && dist6 < 1.3*dist5 //riga del potere!!
+                        && dist1 + dist2 + dist3 + dist4 > 3000 //numero magico!! 5000 non male ma 3000 concede
+                        )
+                {
+                    //iterating through each point
+                    line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
+                    line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
+                    line(img, result[2], result[3], cvScalar(255, 0, 0), 4);
+                    line(img, result[3], result[0], cvScalar(255, 0, 0), 4);
                 }
-
-                //drawing lines around the quadrilateral
-                cvLine(&img, *pt[0], *pt[1], cvScalar(0, 255, 0), 4);
-                cvLine(&img, *pt[1], *pt[2], cvScalar(0, 255, 0), 4);
-                cvLine(&img, *pt[2], *pt[3], cvScalar(0, 255, 0), 4);
-                cvLine(&img, *pt[3], *pt[0], cvScalar(0, 255, 0), 4);
-
                 fCrash = 12 + 100 * count;
             }
 
                 //if there are 7  vertices  in the contour(It should be a heptagon)
-            else if (result->total == 7) {
-                //iterating through each point
-                CvPoint *pt[7];
-                for (int i = 0; i < 7; i++) {
-                    pt[i] = (CvPoint *) cvGetSeqElem(result, i);
-                }
+            /*else if (result.size() == 7) {
 
-                //drawing lines around the heptagon
-                cvLine(&img, *pt[0], *pt[1], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[1], *pt[2], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[2], *pt[3], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[3], *pt[4], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[4], *pt[5], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[5], *pt[6], cvScalar(0, 0, 255), 4);
-                cvLine(&img, *pt[6], *pt[0], cvScalar(0, 0, 255), 4);
+                line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
+                line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
+                line(img, result[2], result[3], cvScalar(255, 0, 0), 4);
+                line(img, result[3], result[4], cvScalar(255, 0, 0), 4);
+                line(img, result[4], result[5], cvScalar(255, 0, 0), 4);
+                line(img, result[5], result[6], cvScalar(255, 0, 0), 4);
+                line(img, result[6], result[0], cvScalar(255, 0, 0), 4);
 
                 fCrash = 13 + 100 * count;
-            }
+            }*/
 
             //obtain the next contour
-            contours = contours->h_next;
+            //contours = contours->h_next;
             count++;
         }
 
 
         fCrash = 20;
         // apply hough circles to find circles and draw a cirlce around it
-        cvCanny(&mGr, imgCanny, 0, 0, 3);
+        /*cv::Canny(mGr, *imgCanny, 0, 0, 3);
         CvSeq *mycircles = cvHoughCircles(imgCanny,
                                         storage,
                                         CV_HOUGH_GRADIENT,
@@ -162,7 +172,7 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
 
             fCrash = 22 + 1000 * i;
 
-        }
+        }*/
 
         //cleaning up
         cvReleaseMemStorage(&storage);
