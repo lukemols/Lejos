@@ -34,12 +34,13 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
     //return mContours.size();
 
     */
-
+    float fCrash = 0;
     try {
 
         Mat &mGr = *(Mat *) addrGray;
         Mat &img = *(Mat *) addrRgba;
 
+        fCrash = 1;
         //converting the original image into grayscale
         //Mat* imgGrayScale = cvCreateImage(cvGetSize(img), 8, 1);//[RIV]
         //FUNZIONA?! Niente errori quindi sì!!//[RIV]
@@ -50,6 +51,7 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                                             CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
         //thresholding the grayscale image to get better results
 
+        fCrash = 2;
         threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);//scopami poi ti spiego
         //cvThreshold(&mGr, &mGr, 128, 255, CV_THRESH_BINARY);
 
@@ -57,10 +59,14 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
         CvSeq *result;   //hold sequence of points of a contour
         CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
+        fCrash = 3;
         //finding all contours in the image
         cvFindContours(&mGr, storage, &contours, sizeof(CvContour), CV_RETR_LIST,
                        CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+        //findContours(mGr, contours, CV_RETR_LIST,
+        //               CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
 
+        fCrash = 4;
         int count = 0;
         //iterating through each contour
         while (contours) {
@@ -68,6 +74,10 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
             result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP,
                                   cvContourPerimeter(contours) * 0.02, 0);
 
+            //result = approxPoly(contours, result,
+            //                      cvContourPerimeter(contours) * 0.02, true);
+
+            fCrash = 10 + 100 * count;
             //if there are 3  vertices  in the contour(It should be a triangle)
             if (result->total == 3) {
                 //iterating through each point
@@ -80,6 +90,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                 cvLine(&img, *pt[0], *pt[1], cvScalar(255, 0, 0), 4);
                 cvLine(&img, *pt[1], *pt[2], cvScalar(255, 0, 0), 4);
                 cvLine(&img, *pt[2], *pt[0], cvScalar(255, 0, 0), 4);
+
+                fCrash = 11 + 100 * count;
 
             }
 
@@ -96,6 +108,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                 cvLine(&img, *pt[1], *pt[2], cvScalar(0, 255, 0), 4);
                 cvLine(&img, *pt[2], *pt[3], cvScalar(0, 255, 0), 4);
                 cvLine(&img, *pt[3], *pt[0], cvScalar(0, 255, 0), 4);
+
+                fCrash = 12 + 100 * count;
             }
 
                 //if there are 7  vertices  in the contour(It should be a heptagon)
@@ -114,6 +128,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                 cvLine(&img, *pt[4], *pt[5], cvScalar(0, 0, 255), 4);
                 cvLine(&img, *pt[5], *pt[6], cvScalar(0, 0, 255), 4);
                 cvLine(&img, *pt[6], *pt[0], cvScalar(0, 0, 255), 4);
+
+                fCrash = 13 + 100 * count;
             }
 
             //obtain the next contour
@@ -121,6 +137,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
             count++;
         }
 
+
+        fCrash = 20;
         // apply hough circles to find circles and draw a cirlce around it
         cvCanny(&mGr, imgCanny, 0, 0, 3);
         CvSeq *mycircles = cvHoughCircles(imgCanny,
@@ -131,12 +149,19 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                                         200,
                                         100);
 
-        for (int i = 0; i < mycircles->total; i++) {
+        fCrash = 21;
+        for (int i = 0; i < mycircles->total; i++)
+        {
             float *p = (float *) cvGetSeqElem(mycircles, i);
+
             cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
                      3, CV_RGB(0, 255, 0), -1, 8, 0);
+
             cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
                      cvRound(p[2]), CV_RGB(0, 255, 255), 3, 8, 0);
+
+            fCrash = 22 + 1000 * i;
+
         }
 
         //cleaning up
@@ -147,6 +172,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
         //return count;
 
         return 0;
+
+        /*
         // apply hough circles to find circles and draw a cirlce around it
         cvCanny(&mGr, imgCanny, 0, 0, 3);
         CvSeq *circles = cvHoughCircles(imgCanny,
@@ -171,10 +198,11 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
         //addrGray->release();
 
         return count;
+         */
     }
     catch(...)
     {
-        return -1;
+        return fCrash;
     }
     /*
      *
