@@ -7,6 +7,14 @@
 
 #define LOGD(TAG,...) __android_log_print(ANDROID_LOG_DEBUG  , TAG,__VA_ARGS__)
 
+//ho definito le mie forme
+#define MY_TRIANGLE         1
+#define MY_SQUARE           2
+#define MY_RECTANGLE        3
+#define MY_PENTAGON         4
+#define MY_CIRCLE           5
+
+
 using namespace std;
 using namespace cv;
 
@@ -14,94 +22,108 @@ extern "C" {
 JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*, jobject, jlong addrGray, jlong addrRgba);
 
 JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*, jobject, jlong addrGray, jlong addrRgba) {
-    /*
-    Mat &mGr = *(Mat *) addrGray;
-    Mat &mRgb = *(Mat *) addrRgba;
 
-    Mat mbw;
-    threshold(mGr, mbw, 60,255,THRESH_BINARY);
-
-
-    vector<vector<Point> > Contours;
-    findContours(mbw,Contours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-
-    vector<vector<Point> > mContours = Contours;
-    for(size_t k = 0; k < Contours.size(); k++)
-    {
-        approxPolyDP(Mat(Contours[k]), mContours[k], 3, true);
-    }
-
-    //return mContours.size();
-
-    */
+    //variabile per riconoscere il punto in cui il programma si schianta
     float fCrash = 0;
-    try {
-
+    //forma geometrica da ritornare
+    float form = 0;
+    //blocco try per rilevare possibili eccezioni
+    try
+    {
+        //matrici del frame da analizzare
         Mat &mGr = *(Mat *) addrGray;
         Mat &img = *(Mat *) addrRgba;
 
+        /////////////////////
         fCrash = 1;
+        /////////////////////
 
-        //blur( mGr, mGr, Size(4,4) );//3e3 buono ma non abbastanza
-        //GaussianBlur(mGr,mGr,Size(5,5),1.4,1.4);
-        //Canny(mGr, mGr, 75, 175, 3, true);
-
-        GaussianBlur(img,img,Size(5,5),3,3);//1.4
+        //Filtro Gaussiano
+        GaussianBlur(img,img,Size(5,5),1.4,1.4);//1.4
+        //riconoscimento dei bordi
         Canny(img, mGr, 75, 175, 3, true);
 
-        //converting the original image into grayscale
-        //Mat* imgGrayScale = cvCreateImage(cvGetSize(img), 8, 1);//[RIV]
-        //FUNZIONA?! Niente errori quindi sì!!//[RIV]
-        //Mat *imgGrayScale = (Mat *) cvCreateMat(img.rows, img.cols,
-        //                                        CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
-        //Mat* imgCanny = cvCreateImage(cvGetSize(img), 8, 1);
-        //Mat *imgCanny = (Mat *) cvCreateMat(img.rows, img.cols,
-        //                                    CV_8U);//VUOI UNA SCALA DI GRIGI CON O SENZA SEGNO?!//[RIV]
-        //thresholding the grayscale image to get better results
-
+        /////////////////////
         fCrash = 2;
-        threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);//NOPE
-        //cvThreshold(&mGr, &mGr, 128, 255, CV_THRESH_BINARY);
+        /////////////////////
 
-        //CvSeq *contours;  //hold the pointer to a contour in the memory block
-        vector<vector<Point> > contours;  //hold the pointer to a contour in the memory block
-        vector<Point> result;   //hold sequence of points of a contour
+        //soglia
+        threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);
+
+        //vettore di insiemi di punti (ogni insieme definisce una forma come triangolo, quadrato, ecc...)
+        vector<vector<Point> > contours;
+        //vettore di punti in cui salvare i punti che riassumono la figura geometrica (3 -> triangolo, 4 -> quadrilatero, ecc...)
+        vector<Point> result;
+        //MA QUANDO CIPPA SI USA QUESTO PUNTATORE?!
         CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
+        /////////////////////
         fCrash = 3;
-        //finding all contours in the image
-        //cvFindContours(&mGr, storage, &contours, sizeof(CvContour), CV_RETR_LIST,
-        //               CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
-        findContours(mGr, contours, CV_RETR_LIST,
-                       CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+        /////////////////////
 
+        //si rilevano i contorni dell'immagine e li si salva in contours
+        findContours(mGr, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+
+        /////////////////////
         fCrash = 4;
+        /////////////////////
+
+        //contatore per aiutare fCrash
         int count = 0;
-        //iterating through each contour
+
+        //si eseguono un numero di iterazioni pari al numero di contorni rilevati
         for(int idx = 0;idx < contours.size();idx++) {
-            //obtain a sequence of points of contour, pointed by the variable 'contour'
-            //result = cvApproxPoly(contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP,
-            //                    cvContourPerimeter(contours) * 0.02, 0);
 
-            approxPolyDP(Mat(contours[idx]), result,
-                                  arcLength(Mat(contours[idx]), true) * 0.02, true);
+            //si identificano i punti essenziali a definire la forma geometrica del contorno che si sta osservando
+            approxPolyDP(Mat(contours[idx]), result, arcLength(Mat(contours[idx]), true) * 0.02, true);
 
+            /////////////////////
             fCrash = 10 + 100 * count;
-            //if there are 3  vertices  in the contour(It should be a triangle)
-            /*if (result.size() == 3) {
+            /////////////////////
 
-                //drawing lines around the triangle
-                line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
-                line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
-                line(img, result[2], result[0], cvScalar(255, 0, 0), 4);
+            //se i punti essenziali sono 3 abbiamo a che fare con un triangolo
+            if (result.size() == 3)
+            {
 
+                //misuro i tre lati del triangolo (niente radice quadrata per evitare costi eccessivi)
+                double dist1 = (result[0].x-result[1].x)*(result[0].x-result[1].x) + (result[0].y-result[1].y)*(result[0].y-result[1].y);
+                double dist2 = (result[1].x-result[2].x)*(result[1].x-result[2].x) + (result[1].y-result[2].y)*(result[1].y-result[2].y);
+                double dist3 = (result[2].x-result[0].x)*(result[2].x-result[0].x) + (result[2].y-result[0].y)*(result[2].y-result[0].y);
+
+                //setto i valori che definiscono il range di ammissibilità dei triangoli
+                double param1 = 0.49;//<--0.7^2
+                double param2 = 1.69;//<--1.3^2
+                double distMin = 200;//lunghezza minima del singolo lato
+                double distSumMin = 1000;//lunghezza minima del perimetro
+
+                //filtro i triangoli aventi anche un solo lato troppo stretto così evito il glitch a spillo
+                if(
+                    /**/
+                    ((param1*dist2 < dist1 && dist1 < param2*dist2) || (param1*dist1 < dist2 && dist2 < param2*dist1)) &&
+                    ((param1*dist3 < dist2 && dist2 < param2*dist3) || (param1*dist2 < dist3 && dist3 < param2*dist2)) &&
+                    ((param1*dist1 < dist3 && dist3 < param2*dist1) || (param1*dist3 < dist1 && dist1 < param2*dist3)) &&
+                    (dist1 + dist2 + dist3 > distSumMin) && (dist1 > distMin && dist2 > distMin && dist3 > distMin)
+                    /**/
+                  )
+                {
+                    //disegno i lati del triangolo a schermo
+                    line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
+                    line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
+                    line(img, result[2], result[0], cvScalar(255, 0, 0), 4);
+
+                    //è un triangolo
+                    form = MY_TRIANGLE;
+                }
+
+                /////////////////////
                 fCrash = 11 + 100 * count;
-
+                /////////////////////
             }
 
-                //if there are 4 vertices in the contour(It should be a quadrilateral)
-            else*/ if (result.size() == 4) {
-
+            //se i punti essenziali sono 4 abbiamo a che fare con un quadrilatero
+            else if (result.size() == 4)
+            {
+                //misuro i lati (1-4) e le diagonali (5-6)
                 double dist1 = (result[0].x-result[1].x)*(result[0].x-result[1].x) + (result[0].y-result[1].y)*(result[0].y-result[1].y);
                 double dist2 = (result[1].x-result[2].x)*(result[1].x-result[2].x) + (result[1].y-result[2].y)*(result[1].y-result[2].y);
                 double dist3 = (result[2].x-result[3].x)*(result[2].x-result[3].x) + (result[2].y-result[3].y)*(result[2].y-result[3].y);
@@ -109,143 +131,127 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                 double dist5 = (result[0].x-result[2].x)*(result[0].x-result[2].x) + (result[0].y-result[2].y)*(result[0].y-result[2].y);
                 double dist6 = (result[1].x-result[3].x)*(result[1].x-result[3].x) + (result[1].y-result[3].y)*(result[1].y-result[3].y);
 
+                //paramentri per definire i range di ammissibilità
+                double param1 = 0.7;
+                double param2 = 1.3;
+                double distMin = 400;
+                double distSumMin = 3000;
+
+                //se le diagonali sono simili e le dimensioni sono accettabili
                 if(
-                        //dist1 == dist2 && dist2 == dist3 && dist3 == dist4 &&
-                        /*0.7*dist2 < dist1 && dist1 < 1.3*dist2 &&
-                        0.7*dist3 < dist2 && dist2 < 1.3*dist3 &&
-                        0.7*dist4 < dist3 && dist3 < 1.3*dist4 &&
-                        0.7*dist1 < dist4 && dist4 < 1.3*dist1
-                        &&*/ 0.7*dist5 < dist6 && dist6 < 1.3*dist5 //riga del potere!!
-                        && dist1 + dist2 + dist3 + dist4 > 3000 //numero magico!! 5000 non male ma 3000 concede
+                    /**/
+                    (param1*dist5 < dist6 && dist6 < param2*dist5 || param1*dist6 < dist5 && dist5 < param2*dist6) &&
+                    (dist1 + dist2 + dist3 + dist4 > distSumMin) && (dist1 > distMin && dist2 > distMin && dist3 > distMin && dist4 > distMin)
+                    /**/
                         )
                 {
-                    //iterating through each point
+                    //disegno la figura, che sia un rettangolo o quadrato
                     line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
                     line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
                     line(img, result[2], result[3], cvScalar(255, 0, 0), 4);
                     line(img, result[3], result[0], cvScalar(255, 0, 0), 4);
+
+                    //se la figura ha i lati uguali (simili)
+                    if(
+                        /**/
+                        (param1*dist2 < dist1 && dist1 < param2*dist2 || param1*dist1 < dist2 && dist2 < param2*dist1) &&
+                        (param1*dist3 < dist2 && dist2 < param2*dist3 || param1*dist2 < dist3 && dist3 < param2*dist2) &&
+                        (param1*dist4 < dist3 && dist3 < param2*dist4 || param1*dist3 < dist4 && dist4 < param2*dist3) &&
+                        (param1*dist1 < dist4 && dist4 < param2*dist1 || param1*dist4 < dist1 && dist1 < param2*dist4)
+                        /**/
+                            )
+                    {
+                        //è un quadrato
+                        form = MY_SQUARE;
+                    }
+                    else
+                    {
+                        //è un rettangolo
+                        form = MY_RECTANGLE;
+                    }
                 }
+
+                /////////////////////
                 fCrash = 12 + 100 * count;
+                /////////////////////
             }
 
-                //if there are 7  vertices  in the contour(It should be a heptagon)
-            /*else if (result.size() == 7) {
+            //se i punti essenziali sono 5 abbiamo a che fare con un pentagono
+            else if(result.size() == 5)
+            {
+                //misuro i lati (1-5)
+                double dist1 = (result[0].x-result[1].x)*(result[0].x-result[1].x) + (result[0].y-result[1].y)*(result[0].y-result[1].y);
+                double dist2 = (result[1].x-result[2].x)*(result[1].x-result[2].x) + (result[1].y-result[2].y)*(result[1].y-result[2].y);
+                double dist3 = (result[2].x-result[3].x)*(result[2].x-result[3].x) + (result[2].y-result[3].y)*(result[2].y-result[3].y);
+                double dist4 = (result[3].x-result[4].x)*(result[3].x-result[4].x) + (result[3].y-result[4].y)*(result[3].y-result[4].y);
+                double dist5 = (result[4].x-result[0].x)*(result[4].x-result[0].x) + (result[4].y-result[0].y)*(result[4].y-result[0].y);
 
-                line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
-                line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
-                line(img, result[2], result[3], cvScalar(255, 0, 0), 4);
-                line(img, result[3], result[4], cvScalar(255, 0, 0), 4);
-                line(img, result[4], result[5], cvScalar(255, 0, 0), 4);
-                line(img, result[5], result[6], cvScalar(255, 0, 0), 4);
-                line(img, result[6], result[0], cvScalar(255, 0, 0), 4);
+                //misuro le diagonali (6-8) [ne misuro 3 nella speranza che siano sufficienti]
+                double dist6 = (result[0].x-result[3].x)*(result[0].x-result[3].x) + (result[0].y-result[3].y)*(result[0].y-result[3].y);
+                double dist7 = (result[0].x-result[2].x)*(result[0].x-result[2].x) + (result[0].y-result[2].y)*(result[0].y-result[2].y);
+                double dist8 = (result[4].x-result[1].x)*(result[4].x-result[1].x) + (result[4].y-result[1].y)*(result[4].y-result[1].y);
 
-                fCrash = 13 + 100 * count;
-            }*/
+                //paramentri per definire i range di ammissibilità
+                double param1 = 0.7;
+                double param2 = 1.3;
+                double distMin = 300;
+                double distSumMin = 3500;
 
-            //obtain the next contour
-            //contours = contours->h_next;
+                //filtro i pentagoni per dimensioni in modo da evitare forme geometriche indesiderate
+                if(
+                    /**/
+                    //lati
+                    (param1*dist2 < dist1 && dist1 < param2*dist2 || param1*dist1 < dist2 && dist2 < param2*dist1) &&
+                    (param1*dist3 < dist2 && dist2 < param2*dist3 || param1*dist2 < dist3 && dist3 < param2*dist2) &&
+                    (param1*dist4 < dist3 && dist3 < param2*dist4 || param1*dist3 < dist4 && dist4 < param2*dist3) &&
+                    (param1*dist5 < dist4 && dist4 < param2*dist5 || param1*dist4 < dist5 && dist5 < param2*dist4) &&
+                    (param1*dist1 < dist5 && dist5 < param2*dist1 || param1*dist5 < dist1 && dist1 < param2*dist5) &&
+                    //diagonali
+                    (param1*dist6 < dist7 && dist7 < param2*dist6 || param1*dist7 < dist6 && dist6 < param2*dist7) &&
+                    (param1*dist8 < dist6 && dist6 < param2*dist8 || param1*dist6 < dist8 && dist8 < param2*dist6) &&
+                    (param1*dist7 < dist8 && dist8 < param2*dist7 || param1*dist8 < dist7 && dist7 < param2*dist8) &&
+                    //perimetro
+                    (dist1 + dist2 + dist3 + dist4 + dist5 > distSumMin) &&
+                    //singoli lati
+                    (dist1 > distMin && dist2 > distMin && dist3 > distMin && dist4 > distMin && dist5 > distMin)
+                    /**/
+                        )
+                {
+                    //disegno il pentagono
+                    line(img, result[0], result[1], cvScalar(255, 0, 0), 4);
+                    line(img, result[1], result[2], cvScalar(255, 0, 0), 4);
+                    line(img, result[2], result[3], cvScalar(255, 0, 0), 4);
+                    line(img, result[3], result[4], cvScalar(255, 0, 0), 4);
+                    line(img, result[4], result[0], cvScalar(255, 0, 0), 4);
+
+                    //è un pentagono
+                    form = MY_PENTAGON;
+                }
+            }
+
+            //incrementiamo il contatore
             count++;
         }
 
-
+        /////////////////////
         fCrash = 20;
-        // apply hough circles to find circles and draw a cirlce around it
-        /*cv::Canny(mGr, *imgCanny, 0, 0, 3);
-        CvSeq *mycircles = cvHoughCircles(imgCanny,
-                                        storage,
-                                        CV_HOUGH_GRADIENT,
-                                        2,
-                                        imgCanny->rows / 4,//height/4,//WUT?!//[RIV]
-                                        200,
-                                        100);
+        /////////////////////
 
-        fCrash = 21;
-        for (int i = 0; i < mycircles->total; i++)
-        {
-            float *p = (float *) cvGetSeqElem(mycircles, i);
-
-            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
-                     3, CV_RGB(0, 255, 0), -1, 8, 0);
-
-            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
-                     cvRound(p[2]), CV_RGB(0, 255, 255), 3, 8, 0);
-
-            fCrash = 22 + 1000 * i;
-
-        }*/
-
-        //cleaning up
+        //QUALCUNO SA A CHE CIPPA SERVE IL PUNTATORE "storage"?!
         cvReleaseMemStorage(&storage);
+        //DOVREMMO DEALLOCARE UN PO' DI SPAZIO O NO?
         //cvReleaseImage(&imgGrayScale);//WUT?!
         //addrGray->release();
 
-        //return count;
-
+        //ritorno il valore associato alla forma geometrica più osservata
         return 0;
-
-        /*
-        // apply hough circles to find circles and draw a cirlce around it
-        cvCanny(&mGr, imgCanny, 0, 0, 3);
-        CvSeq *circles = cvHoughCircles(imgCanny,
-                                        storage,
-                                        CV_HOUGH_GRADIENT,
-                                        2,
-                                        imgCanny->rows / 4,//height/4,//WUT?!//[RIV]
-                                        200,
-                                        100);
-
-        for (int i = 0; i < circles->total; i++) {
-            float *p = (float *) cvGetSeqElem(circles, i);
-            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
-                     3, CV_RGB(0, 255, 0), -1, 8, 0);
-            cvCircle(&img, cvPoint(cvRound(p[0]), cvRound(p[1])),
-                     cvRound(p[2]), CV_RGB(0, 255, 255), 3, 8, 0);
-        }
-
-        //cleaning up
-        cvReleaseMemStorage(&storage);
-        //cvReleaseImage(&imgGrayScale);//WUT?!
-        //addrGray->release();
-
-        return count;
-         */
     }
     catch(...)
     {
+        //per facilitare il riconoscimento del punto in cui il programma lancia un'eccezione
+        fCrash *= -1;//il -1 serve a riconoscere che è associato ad un' eccezione e non ad una forma geometrica
         return fCrash;
     }
-    /*
-     *
-     * vector<Vec3f> circles;
-    GaussianBlur( mGr, mGr, Size(9, 9), 1, 1 );
-    //HoughCircles(mGr, circles, CV_HOUGH_GRADIENT, 1, mGr.rows/8, 200, 100, 0, 0 ); //it does not take many circles
-    //HoughCircles(mGr, circles, CV_HOUGH_GRADIENT, 2, 32.0, 30, 150, 550); //it takes no circle
-    HoughCircles(mGr, circles, CV_HOUGH_GRADIENT, 2, 100.0, 30, 150, 100, 140);
-    //HoughCircles(mGr, circles, CV_HOUGH_GRADIENT, 2, mGr.rows/4,200, 100); //this one is kind of imprecise
-    vector<Point> mCen;
+}//FINE definizione funzione
 
-    /// Draw the circles detected
-    for( size_t i = 0; i < circles.size(); i++ )
-    {
-        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
-        // circle center
-        circle( mRgb, center, 3, Scalar(255, 0, 0, 255), -1, 8, 0 );
-        // circle outline
-        circle( mRgb, center, radius, Scalar(255, 0, 0, 255), 3, 8, 0 );
-
-        mCen.push_back(center);
-    }
-    if(mCen.size() != 0) {
-        LOGD("JNI","found circle");
-        return mCen[0].x;
-    }
-    else {
-        LOGD("JNI","no circle");
-        return 0;
-    }*/
-
-
-}
-
-}
+}//FINE extern "C"
