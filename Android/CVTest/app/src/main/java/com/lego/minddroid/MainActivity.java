@@ -6,12 +6,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import Connection.BluetoothConnector;
+
 
 public class MainActivity extends Activity {
 
     private static final String    TAG = "OCVSample::MainActivity";
     private static final int    FOLLOW_REQUEST = 1;
-    private StaticClass robotControl = StaticClass.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,28 +22,28 @@ public class MainActivity extends Activity {
         Log.i(TAG, "Instantiated new " + this.getClass());
 
         //start robot program
-        robotControl.onStart(this);
+        BluetoothConnector.getInstance().onStart(this);
 
     }
     @Override
     protected void onResume() {
         super.onResume();
-        robotControl.onResume(this);
+        BluetoothConnector.getInstance().onResume(this);
     }
     @Override
     protected void onStop() {
         super.onStop();
-        robotControl.onStop();
+        BluetoothConnector.getInstance().onStop();
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        robotControl.onDestroy();
+        BluetoothConnector.getInstance().onDestroy();
     }
     @Override
     public void onPause() {
         super.onPause();
-        robotControl.onPause();
+        BluetoothConnector.getInstance().onPause();
     }
 
     //button interface to send starting intent to CameraActivity

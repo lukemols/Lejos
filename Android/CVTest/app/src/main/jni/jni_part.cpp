@@ -8,11 +8,13 @@
 #define LOGD(TAG,...) __android_log_print(ANDROID_LOG_DEBUG  , TAG,__VA_ARGS__)
 
 //ho definito le mie forme
+#define MY_NULL             0
 #define MY_TRIANGLE         1
 #define MY_SQUARE           2
 #define MY_RECTANGLE        3
 #define MY_PENTAGON         4
 #define MY_CIRCLE           5
+#define MY_FORMS            6
 
 
 using namespace std;
@@ -26,7 +28,10 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
     //variabile per riconoscere il punto in cui il programma si schianta
     float fCrash = 0;
     //forma geometrica da ritornare
-    float form = 0;
+    float form = MY_NULL;
+    //contatori delle forme osservate
+    int forms[MY_FORMS] = {0};
+
     //blocco try per rilevare possibili eccezioni
     try
     {
@@ -54,8 +59,6 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
         vector<vector<Point> > contours;
         //vettore di punti in cui salvare i punti che riassumono la figura geometrica (3 -> triangolo, 4 -> quadrilatero, ecc...)
         vector<Point> result;
-        //MA QUANDO CIPPA SI USA QUESTO PUNTATORE?!
-        CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
         /////////////////////
         fCrash = 3;
@@ -112,7 +115,7 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                     line(img, result[2], result[0], cvScalar(255, 0, 0), 4);
 
                     //è un triangolo
-                    form = MY_TRIANGLE;
+                    forms[MY_TRIANGLE]++;
                 }
 
                 /////////////////////
@@ -162,12 +165,12 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                             )
                     {
                         //è un quadrato
-                        form = MY_SQUARE;
+                        forms[MY_SQUARE]++;
                     }
                     else
                     {
                         //è un rettangolo
-                        form = MY_RECTANGLE;
+                        forms[MY_RECTANGLE]++;
                     }
                 }
 
@@ -225,7 +228,7 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
                     line(img, result[4], result[0], cvScalar(255, 0, 0), 4);
 
                     //è un pentagono
-                    form = MY_PENTAGON;
+                    forms[MY_PENTAGON]++;
                 }
             }
 
@@ -233,18 +236,48 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*
             count++;
         }
 
+        /*/
+        //riconoscimento cerchi
+        vector<Vec3f> circles;
+        //
+        HoughCircles(mGr, circles, CV_HOUGH_GRADIENT, 2, 50.0, 30, 150, 70, 140);
+        //
+        forms[MY_CIRCLE] += circles.size();
+
+        /// Disegno i cerchi
+        for( size_t i = 0; i < circles.size(); i++ )
+        {
+            //
+            Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+            //
+            int radius = cvRound(circles[i][2]);
+            // circle outline
+            circle( img, center, radius, Scalar(255, 0, 0, 255), 3, 8, 0 );
+        }
+        /**/
+
         /////////////////////
         fCrash = 20;
         /////////////////////
 
-        //QUALCUNO SA A CHE CIPPA SERVE IL PUNTATORE "storage"?!
-        cvReleaseMemStorage(&storage);
-        //DOVREMMO DEALLOCARE UN PO' DI SPAZIO O NO?
-        //cvReleaseImage(&imgGrayScale);//WUT?!
-        //addrGray->release();
-
         //ritorno il valore associato alla forma geometrica più osservata
-        return 0;
+        int max = 0;
+
+        for(int i=0;i<MY_FORMS;i++)
+        {
+            if(forms[i] > max)
+            {
+                max = forms[i];
+                form = i;
+            }
+        }
+
+        if(max == 0)
+        {
+            form = MY_NULL;
+        }
+
+        return form;
     }
     catch(...)
     {

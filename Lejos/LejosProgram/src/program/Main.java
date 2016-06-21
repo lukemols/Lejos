@@ -18,13 +18,13 @@ import lejos.remote.nxt.NXTCommConnector;
 public class Main {
 
 	public static void main(String[] args) {
-		
+
 		Wheel wheel1 = WheeledChassis.modelWheel(Motor.B, 55.5).offset(-60);
 		Wheel wheel2 = WheeledChassis.modelWheel(Motor.D, 55.5).offset(60);
 		Chassis chassis = new WheeledChassis(new Wheel[]{wheel1, wheel2}, WheeledChassis.TYPE_DIFFERENTIAL); 
-		
+
 		MovePilot pilot = new MovePilot(chassis);
-		
+
 		NXTConnection connection = null;
 
 		if( true ){
@@ -41,24 +41,23 @@ public class Main {
 
 				LCD.clear(); 
 				LCD.drawString("Operation: " + Integer.toString(n), 0, 1); 
-				
+
 				float step = 0;
 				switch(n)
 				{
-				case 1:
+				case 2:
 					step = 10;
 					break;
-				case 2:
-					step = -10;
-					break;
 				case 3:
-					pilot.rotate(- 5 * 5);
+					pilot.rotate(- 25);
 					break;
 				case 4:
-					pilot.rotate(5 * 5);
+					pilot.rotate(+ 25);
 					break;
 				case 0:
-					default:
+				case 1:
+				default:
+					step = 0;
 					break;
 				}
 

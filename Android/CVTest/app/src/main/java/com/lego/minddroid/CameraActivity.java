@@ -20,6 +20,10 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.util.Calendar;
+
+import Connection.BluetoothConnector;
+
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -30,10 +34,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private Mat mIntermediateMat;
     private Mat mGray;
 
+    int lastS;
+    int countS;
+
     private CameraBridgeViewBase mOpenCvCameraView;
     private Button sBt;
 
-    private StaticClass robotControl = StaticClass.getInstance();
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -60,10 +66,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         AppIndex.AppIndexApi.start(client, viewAction);
     }
 
-    private enum STATE {STATE_RESET, STATE_GO, STATE_STOP}
-
-    private STATE currentState;
-    private float centers;
+    private float form;
 
     private final int motorLeft = 1;
     private final int motorRight = 2;
@@ -74,7 +77,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        robotControl.onStart(this);
+        BluetoothConnector.getInstance().onStart(this);
         setContentView(R.layout.activity_camera);
         Log.i(TAG, "OnCreate CameraActivity");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -82,9 +85,10 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.activity_java_surface_view);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
-        centers = 0f;
-        currentState = STATE.STATE_RESET;
+        form = 0f;
 
+        lastS = Calendar.getInstance().get(Calendar.SECOND);
+        countS = 0;
 
         sBt = (Button) findViewById(R.id.stop_button);
         // ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -118,10 +122,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     @Override
     public void onPause() {
         super.onPause();
-        robotControl.onPause();
+        BluetoothConnector.getInstance().onPause();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
-        currentState = STATE.STATE_RESET;
     }
 
     @Override
@@ -140,10 +143,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 Uri.parse("android-app://com.lego.minddroid/http/host/path")
         );
         AppIndex.AppIndexApi.end(client, viewAction);
-        robotControl.onStop();
+        BluetoothConnector.getInstance().onStop();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
-        currentState = STATE.STATE_RESET;
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client.disconnect();
@@ -152,7 +154,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     @Override
     public void onResume() {
         super.onResume();
-        robotControl.onResume(this);
+        BluetoothConnector.getInstance().onResume(this);
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
@@ -160,16 +162,14 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             Log.d(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
-        currentState = STATE.STATE_RESET;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        robotControl.onDestroy();
+        BluetoothConnector.getInstance().onDestroy();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
-        currentState = STATE.STATE_RESET;
     }
 
     // here starts the part to set the camera and retreive features----------------------------------
@@ -191,11 +191,11 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
-        double[] x = mGray.get(0,0);
-        centers = Function(mGray.getNativeObjAddr(), mRgba.getNativeObjAddr());
-        //followRedBall();
-        String s = Float.toString(centers);
+        form = Function(mGray.getNativeObjAddr(), mRgba.getNativeObjAddr());
+        SendCommand();
+        String s = Float.toString(form);
         Log.d("MSG", s);
+        GetFrameRate();
         return mRgba;
     }
 
@@ -212,53 +212,25 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     //here start the part to control the movement of the robot---------------------------------
 
-    public void followRedBall() {
-        switch (currentState) {
-            case STATE_RESET:
-                Log.d(TAG, "RESET STATE");
-                if (centers != 0f) {
-                    currentState = STATE.STATE_GO;
-                } else {
-                    currentState = STATE.STATE_STOP;
-                }
-                break;
-            case STATE_GO:
-                Log.d(TAG, "GO STATE");
+    public void SendCommand()
+    {
+        BluetoothConnector.getInstance().SendMessage((int)form);
+    }
 
-                double min_width = 0.3f * (mRgba.size().width);
-                double max_width = 0.7f * (mRgba.size().width);
-
-                /*if(centers == 0){
-                    robotControl.updateMotorControl(stopMotor);
-                    currentState = STATE.STATE_STOP;
-                }*/
-
-                //if the position of the center of the circle is in the center, go straight
-                if (centers > min_width && centers < max_width) {
-                    robotControl.updateMotorControl(goStraight);
-                    currentState = STATE.STATE_GO;
-                } else {
-                    //if the position of the center of the circle is on the left, go left
-                    if (centers < min_width) {
-                        robotControl.updateMotorControl(motorLeft);
-                    } //if the position of the center of the circle is on the right, go right
-                    else {
-                        robotControl.updateMotorControl(motorRight);
-                    }
-                    currentState = STATE.STATE_GO;
-                }
-                break;
-            //command motorStop is sent during this state if still no center is to be found
-            case STATE_STOP:
-                Log.d(TAG, "STOP STATE");
-                if (centers == 0) {
-                    robotControl.updateMotorControl(stopMotor);
-                } else {
-                    currentState = STATE.STATE_GO;
-                    robotControl.updateMotorControl(goStraight);
-                }
-                break;
+        private void GetFrameRate()
+    {
+        int s = Calendar.getInstance().get(Calendar.SECOND);
+        if(s != lastS)
+        {
+            lastS = s;
+            Log.d("FrameRate: ", Integer.toString(countS));
+            countS = 0;
+        }
+        else
+        {
+            countS++;
         }
     }
+
 
 }
