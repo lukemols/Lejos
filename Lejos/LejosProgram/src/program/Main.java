@@ -1,73 +1,82 @@
 package program;
 
-import java.awt.Button;
+//import java.awt.Button;
+
 import java.io.*;
-import lejos.ev3.*;
-import lejos.hardware.Bluetooth;
+
+import Connector.BluetoothConnector;
+import Motor.MotorControl;
+import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
-import lejos.hardware.motor.Motor;
-import lejos.remote.nxt.NXTConnection;
-import lejos.robotics.chassis.Chassis;
-import lejos.robotics.chassis.Wheel;
-import lejos.robotics.chassis.WheeledChassis;
-import lejos.robotics.navigation.MovePilot;
-import lejos.remote.nxt.BTConnection;
-import lejos.remote.nxt.NXTComm;
-import lejos.remote.nxt.NXTCommConnector;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.robotics.SampleProvider;
 
 public class Main {
 
 	public static void main(String[] args) {
+		
+		LCD.drawString("Starting Color Sensor", 0,1 );
+		EV3ColorSensor color = new EV3ColorSensor(SensorPort.S4);
+		LCD.clear();
+		
+		MotorControl myMotor = new MotorControl();
+		
+		myMotor.initialize(100);
 
-		Wheel wheel1 = WheeledChassis.modelWheel(Motor.B, 55.5).offset(-60);
-		Wheel wheel2 = WheeledChassis.modelWheel(Motor.D, 55.5).offset(60);
-		Chassis chassis = new WheeledChassis(new Wheel[]{wheel1, wheel2}, WheeledChassis.TYPE_DIFFERENTIAL); 
-
-		MovePilot pilot = new MovePilot(chassis);
-
-		NXTConnection connection = null;
-
-		if( true ){
+		while( !BluetoothConnector.getInstance().startConnection() )
+		{
 			LCD.drawString("waiting for BT", 0,1 );
-			connection = Bluetooth.getNXTCommConnector().waitForConnection(10000, NXTConnection.RAW);
+			if(Button.ESCAPE.isDown())
+				return;
 		}
+
 		LCD.clear();
 		LCD.drawString("BT connected", 0,1 );
-		DataOutputStream dataOut = connection.openDataOutputStream();
-		DataInputStream dataIn = connection.openDataInputStream();
-		try {
-			while(connection instanceof NXTConnection) { 
-				int n = dataIn.readInt(); 
+		
+		SampleProvider sample =	color.getRGBMode();
+		float[] actualRead = new float[sample.sampleSize()];
+		float riskColor = 0.005f;
 
-				LCD.clear(); 
-				LCD.drawString("Operation: " + Integer.toString(n), 0, 1); 
+		while(BluetoothConnector.getInstance().ConnectionActive()) 
+		{ 
+			if(Button.ESCAPE.isDown())
+				break;
+			
+			sample.fetchSample(actualRead, 0);
 
-				float step = 0;
-				switch(n)
-				{
-				case 2:
-					step = 10;
-					break;
-				case 3:
-					pilot.rotate(- 25);
-					break;
-				case 4:
-					pilot.rotate(+ 25);
-					break;
-				case 0:
-				case 1:
-				default:
-					step = 0;
-					break;
-				}
+			int n = BluetoothConnector.getInstance().ReceiveMessage(); 
 
-				pilot.travel(step);
+			LCD.clear(); 
+			LCD.drawString("Operation: " + Integer.toString(n), 0, 1);
+			LCD.drawString(Float.toString(actualRead[0]), 0, 2);
 
+			if(actualRead[0] < riskColor)
+			{
+				myMotor.safeTurn();
+				continue;
 			}
-		} 
-		catch (IOException e ) {
-			System.out.println(" write error "+e); 
+			
+			switch(n)
+			{
+			case 2:
+				myMotor.goForward();
+				break;
+			case 3:
+				myMotor.rotateSX();
+				break;
+			case 4:
+				myMotor.rotateDX();
+				break;
+			case 0:
+			case 1:
+			default:
+				myMotor.Stop();
+				break;
+			}
 		}
+		
+		color.close();
 
 	}
 

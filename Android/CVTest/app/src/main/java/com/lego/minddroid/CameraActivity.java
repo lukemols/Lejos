@@ -21,6 +21,9 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import java.util.Calendar;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import Connection.BluetoothConnector;
 
@@ -214,7 +217,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     public void SendCommand()
     {
-        BluetoothConnector.getInstance().SendMessage((int)form);
+        ExecutorService TaskList = Executors.newFixedThreadPool(2);
+
+        BluetoothConnector.getInstance().setParameters(true,(int)form);
+        TaskList.execute(BluetoothConnector.getInstance());
+
+        TaskList.shutdown();
     }
 
         private void GetFrameRate()

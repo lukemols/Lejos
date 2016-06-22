@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * Created by becca on 21/06/2016.
  */
-public class BluetoothConnector implements IConnector {
+public class BluetoothConnector implements IConnector, Runnable {
 
     //singleton design pattern
     private static BluetoothConnector mInstance= null;
@@ -43,6 +43,10 @@ public class BluetoothConnector implements IConnector {
     private BluetoothSocket BTsocket;
     //boolean to know if the connection is active or not
     public boolean connected = false;
+
+    private boolean sendMessage = true;
+    private int code = 0;
+    public int getCode(){ return code; }
 
     @Override
     public void StartConnection(String macAddress)
@@ -118,6 +122,27 @@ public class BluetoothConnector implements IConnector {
         /*00:16:53:10:75:86 is the value of the lejos robot WALL-E to which we connect*/
 
     }
+
+    public void setParameters(boolean sendMessage, int code)
+    {
+        this.sendMessage = sendMessage;
+        this.code = code;
+    }
+
+
+    @Override
+    public void run()
+    {
+        if(sendMessage)
+        {
+            SendMessage(code);
+        }
+        else
+        {
+            code = ReceiveMessage();
+        }
+    }
+
 
 
     //public function to update the caller
