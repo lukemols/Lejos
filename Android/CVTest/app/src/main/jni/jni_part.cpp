@@ -21,9 +21,9 @@ using namespace std;
 using namespace cv;
 
 extern "C" {
-JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*, jobject, jlong addrGray, jlong addrRgba);
+JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_DetectShape(JNIEnv*, jobject, jlong addrGray, jlong addrRgba);
 
-JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_Function(JNIEnv*, jobject, jlong addrGray, jlong addrRgba) {
+JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_DetectShape(JNIEnv*, jobject, jlong addrGray, jlong addrRgba) {
 
     //variabile per riconoscere il punto in cui il programma si schianta
     float fCrash = 0;

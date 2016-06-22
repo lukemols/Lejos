@@ -194,7 +194,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
-        form = Function(mGray.getNativeObjAddr(), mRgba.getNativeObjAddr());
+        form = DetectShape(mGray.getNativeObjAddr(), mRgba.getNativeObjAddr());
         SendCommand();
         String s = Float.toString(form);
         Log.d("MSG", s);
@@ -204,13 +204,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     //this function is triggered by the button STOP ME
     public void goBackToMain(View view) {
-        Intent intent = new Intent(CameraActivity.this, MainActivity.class);
-        startActivityForResult(intent, BACK_REQUEST);
+        finish();
     }
 
     //c++ function to retrieve features from frame
 
-    public native float Function(long matAddrGr, long matAddrRgba);
+    public native float DetectShape(long matAddrGr, long matAddrRgba);//Function
 
 
     //here start the part to control the movement of the robot---------------------------------
