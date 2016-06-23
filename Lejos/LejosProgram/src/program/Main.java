@@ -15,8 +15,9 @@ import lejos.robotics.SampleProvider;
 public class Main {
 
 	public static void main(String[] args) {
-		
-		LCD.drawString("Starting Color Sensor", 0,1 );
+
+		LCD.drawString("Starting", 0,1 );
+		LCD.drawString("Color Sensor", 0,2 );
 		EV3ColorSensor color = new EV3ColorSensor(SensorPort.S4);
 		LCD.clear();
 		
@@ -48,11 +49,11 @@ public class Main {
 			int n = BluetoothConnector.getInstance().ReceiveMessage(); 
 
 			LCD.clear(); 
-			LCD.drawString("Operation: " + Integer.toString(n), 0, 1);
-			LCD.drawString(Float.toString(actualRead[0]), 0, 2);
+			LCD.drawString("Operation:", 0, 1);
 
 			if(actualRead[0] < riskColor)
 			{
+				LCD.drawString("Safe Turn", 0, 2);
 				myMotor.safeTurn();
 				continue;
 			}
@@ -60,17 +61,21 @@ public class Main {
 			switch(n)
 			{
 			case 2:
+				LCD.drawString("Go forward", 0, 2);
 				myMotor.goForward();
 				break;
 			case 3:
+				LCD.drawString("Turn Left", 0, 2);
 				myMotor.rotateSX();
 				break;
 			case 4:
+				LCD.drawString("Turn Right", 0, 2);
 				myMotor.rotateDX();
 				break;
 			case 0:
 			case 1:
 			default:
+				LCD.drawString("Stop", 0, 2);
 				myMotor.Stop();
 				break;
 			}

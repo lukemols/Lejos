@@ -176,22 +176,5 @@ public class BluetoothConnector implements IConnector, Runnable {
         }catch(Exception e){e.printStackTrace();}
     }
 
-    //alert dialog to control to advise that the battery is ending. It can be called during any exchange of messages from
-    //an activity containing an instance of StaticClass
-    private void onBatteryEnded(){
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(caller);
-
-        alertDialogBuilder.setTitle(R.string.alert_title);
-        alertDialogBuilder.
-                setMessage("The battery is ending: please recharge me. Do you want to continue? ").
-                setPositiveButton(R.string.Continue , new DialogInterface.OnClickListener(){
-                    @Override
-                    public void onClick(DialogInterface dialog, int which){
-                        dialog.cancel();
-                    }
-                });
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
 }

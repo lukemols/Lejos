@@ -45,8 +45,16 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_DetectShape(JNIE
 
         //Filtro Gaussiano
         GaussianBlur(img,img,Size(5,5),1.4,1.4);//1.4
+
+        //per visualizzare l'immagine dopo il filtraggio di Gauss
+        //return fCrash;
+
         //riconoscimento dei bordi
         Canny(img, mGr, 75, 175, 3, true);
+
+        //per visualizzare l'immagine dopo il filtraggio di Canny
+        //img = mGr;
+        //return fCrash;
 
         /////////////////////
         fCrash = 2;
@@ -54,6 +62,10 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_DetectShape(JNIE
 
         //soglia
         threshold(mGr, mGr, 128, 255, CV_THRESH_BINARY);
+
+        //per visualizzare l'immagine dopo il filtraggio tramite soglia
+        //img = mGr;
+        //return fCrash;
 
         //vettore di insiemi di punti (ogni insieme definisce una forma come triangolo, quadrato, ecc...)
         vector<vector<Point> > contours;

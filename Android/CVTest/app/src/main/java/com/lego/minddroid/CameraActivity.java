@@ -94,6 +94,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         countS = 0;
 
         sBt = (Button) findViewById(R.id.stop_button);
+        //sBt.setVisibility(View.INVISIBLE);
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();

@@ -4,50 +4,22 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:padding="5dp" >
-    <ImageView android:contentDescription="@string/no_content_description"
-        android:id="@+id/MainActivityImageView"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:gravity="center"/>
-    <TextView
-        android:id="@+id/MainActivityTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity = "center"
-        android:layout_gravity="center_horizontal|top"
-        android:textStyle="bold"
-        android:text="@string/welcome_string"
-        android:textSize="50sp"
-        />
-    <TextView
-        android:id="@+id/InstructionsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity = "center"
-        android:layout_gravity="center_horizontal|top"
-        android:textStyle="bold"
-        android:textSize="20sp"
-        android:text="@string/instructions_string"
-        android:layout_marginTop="70dp"
-        android:layout_below="@id/MainActivityTextView"
-        />
+
     <ImageView
         android:layout_centerHorizontal="true"
-        android:id = "@+id/segawayRobotImage"
+        android:id = "@+id/robotImage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity = "center"
-        android:src = "@drawable/main_image"
-        android:layout_below="@id/InstructionsTextView"
-        android:layout_marginTop="20dp"/>
+        android:layout_gravity = "center_horizontal|top"
+        android:src = "@drawable/logo"
+        android:layout_marginBottom="20dp"/>
     <Button
         android:id="@+id/startButton"
         android:textSize="30sp"
         android:layout_gravity="center_horizontal|bottom"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/InstructionsTextView"
-        android:text="@string/follow_red_ball_string"
+        android:layout_below="@id/robotImage"
+        android:text="@string/search_shapes_string"
         android:onClick="redBallButtonClicked"/>
 </FrameLayout>
