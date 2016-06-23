@@ -195,8 +195,8 @@ JNIEXPORT jfloat JNICALL Java_com_lego_minddroid_CameraActivity_DetectShape(JNIE
                 double dist8 = (result[4].x-result[1].x)*(result[4].x-result[1].x) + (result[4].y-result[1].y)*(result[4].y-result[1].y);
 
                 //paramentri per definire i range di ammissibilità
-                double param1 = 0.7;
-                double param2 = 1.3;
+                double param1 = 0.49;//0.7^2
+                double param2 = 1.69;//1.3^2
                 double distMin = 300;
                 double distSumMin = 3500;
 
